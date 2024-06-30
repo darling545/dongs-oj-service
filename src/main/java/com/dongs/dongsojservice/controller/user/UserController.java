@@ -49,11 +49,10 @@ public class UserController {
     /**
      * 用户登录
      * @param userLoginRequest
-     * @param request
      * @return
      */
     @PostMapping("/login")
-    public BaseResponse<LoginUserVo> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request){
+    public BaseResponse<LoginUserVo> userLogin(@RequestBody UserLoginRequest userLoginRequest){
         if (userLoginRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"账户或密码信息为空！！！");
         }
@@ -65,7 +64,7 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"账户或密码信息为空！！！");
         }
 
-        LoginUserVo loginUserVo = userService.userLogin(userAccount,userPassword,request);
+        LoginUserVo loginUserVo = userService.userLogin(userAccount,userPassword);
         return ResultUtils.success(loginUserVo);
 
     }
@@ -96,26 +95,21 @@ public class UserController {
 
     /**
      * 用户注销
-     * @param request
      * @return
      */
     @PostMapping("/logout")
-    public BaseResponse<Boolean> userLogout(HttpServletRequest request){
-        if (request == null){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        boolean result = userService.userLogout(request);
+    public BaseResponse<Boolean> userLogout(){
+        boolean result = userService.userLogout();
         return ResultUtils.success(result);
     }
 
     /**
      * 获取当前登陆用户信息
-     * @param request
      * @return
      */
     @GetMapping("get/login")
-    public BaseResponse<LoginUserVo> getLoginUser(HttpServletRequest request){
-        User user = userService.getLoginUser(request);
+    public BaseResponse<LoginUserVo> getLoginUser(){
+        User user = userService.getLoginUser();
         return ResultUtils.success(userService.getLoginUserVo(user));
     }
 
@@ -125,8 +119,7 @@ public class UserController {
     // begin 用户管理（增删改查）
     @PostMapping("/list/page")
     @AuthCheck(mustRole = ADMIN_ROLE)
-    public BaseResponse<Page<User>> selectUserInfoByPage(@RequestBody UserQueryRequest userQueryRequest,
-                                                         HttpServletRequest request){
+    public BaseResponse<Page<User>> selectUserInfoByPage(@RequestBody UserQueryRequest userQueryRequest){
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
         Page<User> userPage = userService.page(new Page<>(current,size),
@@ -138,12 +131,10 @@ public class UserController {
     /**
      * 分页获取用户封装列表
      * @param userQueryRequest
-     * @param request
      * @return
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<UserVo>> selectUserVoByPage(@RequestBody UserQueryRequest userQueryRequest,
-                                                       HttpServletRequest request){
+    public BaseResponse<Page<UserVo>> selectUserVoByPage(@RequestBody UserQueryRequest userQueryRequest){
         if (userQueryRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数不能为空!");
         }
@@ -161,7 +152,7 @@ public class UserController {
 
     @PostMapping("/delete")
     @AuthCheck(mustRole = ADMIN_ROLE)
-    public BaseResponse<Boolean> deleteUserById(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request){
+    public BaseResponse<Boolean> deleteUserById(@RequestBody DeleteRequest deleteRequest){
         if (deleteRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"请求参数为空!");
         }
@@ -171,8 +162,7 @@ public class UserController {
 
     @PostMapping("/update")
     @AuthCheck(mustRole = ADMIN_ROLE)
-    public BaseResponse<Boolean> updateUserById(@RequestBody UserUpdateRequest userUpdateRequest,
-                                             HttpServletRequest request){
+    public BaseResponse<Boolean> updateUserById(@RequestBody UserUpdateRequest userUpdateRequest){
         if (userUpdateRequest == null || userUpdateRequest.getId() == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -189,12 +179,11 @@ public class UserController {
      * 根据 id 获取用户（仅管理员）
      *
      * @param id
-     * @param request
      * @return
      */
     @GetMapping("/get")
     @AuthCheck(mustRole = ADMIN_ROLE)
-    public BaseResponse<User> getUserById(long id, HttpServletRequest request) {
+    public BaseResponse<User> getUserById(long id) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -207,12 +196,11 @@ public class UserController {
      * 根据 id 获取包装类
      *
      * @param id
-     * @param request
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<UserVo> getUserVOById(long id, HttpServletRequest request) {
-        BaseResponse<User> response = getUserById(id, request);
+    public BaseResponse<UserVo> getUserVOById(long id) {
+        BaseResponse<User> response = getUserById(id);
         User user = response.getData();
         return ResultUtils.success(userService.getUserVo(user));
     }
@@ -224,16 +212,14 @@ public class UserController {
     /**
      * 修改用户个人信息
      * @param userUpdateRequest
-     * @param request
      * @return
      */
     @PostMapping("/update/own")
-    public BaseResponse<Boolean> updateUserByIdOwner(@RequestBody UserUpdateRequest userUpdateRequest,
-                                                     HttpServletRequest request){
+    public BaseResponse<Boolean> updateUserByIdOwner(@RequestBody UserUpdateRequest userUpdateRequest){
         if (userUpdateRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userService.getLoginUser();
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest,user);
         user.setId(loginUser.getId());

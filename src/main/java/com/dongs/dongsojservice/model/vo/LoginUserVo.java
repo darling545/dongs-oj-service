@@ -22,7 +22,7 @@ public class LoginUserVo {
     /**
      * 用户名称
      */
-    private String username;
+    private String userName;
     /**
      * 用户简介
      */
@@ -43,6 +43,11 @@ public class LoginUserVo {
      * 修改时间
      */
     private Date updateTime;
+
+    /**
+     * 用于前后端进行交互的token
+     */
+    private String token;
 
 
 }

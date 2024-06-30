@@ -1,5 +1,6 @@
 package com.dongs.dongsojservice.service.user.impl;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -19,10 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +46,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 
     @Override
-    public LoginUserVo userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+    public LoginUserVo userLogin(String userAccount, String userPassword) {
         // 1、校验
         if (StringUtils.isAllBlank(userAccount,userPassword)){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"用户名或密码为空！");
@@ -72,9 +70,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             log.info("user login failed, userAccount cannot match userPassword");
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"用户名或者密码不存在");
         }
-
+        StpUtil.login(user.getId());
+        // 记录用户登录状态
+        StpUtil.getSession().set(USER_LOGIN_STATE,user);
         // 5、返回信息
-        request.getSession().setAttribute(USER_LOGIN_STATE,user);
         return this.getLoginUserVo(user);
     }
 
@@ -122,45 +121,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return null;
         }
         BeanUtils.copyProperties(user,loginUserVo);
+        // 设置token返回给前端
+        SaTokenInfo saTokenInfo = StpUtil.getTokenInfo();
+        loginUserVo.setToken(saTokenInfo.getTokenValue());
         return loginUserVo;
     }
 
     /**
      * 用户注销
-     * @param request 获取用户登录态
      * @return
      */
     @Override
-    public Boolean userLogout(HttpServletRequest request) {
-        if (request.getSession().getAttribute(USER_LOGIN_STATE) == null){
-            throw new BusinessException(ErrorCode.OPERATION_ERROR,"未登录");
+    public Boolean userLogout() {
+        // 判断用户是否登陆中
+        if(StpUtil.getLoginIdDefaultNull() == null){
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR,"用户尚未登陆");
         }
+        StpUtil.logout();
         // 移除登录态
-        request.getSession().removeAttribute(USER_LOGIN_STATE);
         return true;
     }
 
     /**
      * 获取当前登录用户信息
-     * @param request
      * @return
      */
     @Override
-    public User getLoginUser(HttpServletRequest request) {
-        // 判断是否已登陆
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User currentUser = (User) userObj;
-        if (currentUser == null || currentUser.getId() == null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+    public User getLoginUser() {
+        try{
+            // 判断是否登录
+            Object userObj = StpUtil.getSession().get(USER_LOGIN_STATE);
+            User currentUser = (User) userObj;
+            if (currentUser == null || currentUser.getId() == null){
+                throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR,"未获取到用户信息");
+            }
+            return currentUser;
+        }catch (NotLoginException e){
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR,ErrorCode.NOT_LOGIN_ERROR.getMessage());
         }
-        // 查询数据库，是否在数据库中存在
-        long userId = currentUser.getId();
-
-        currentUser = this.getById(userId);
-        if (currentUser == null){
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
-        }
-        return currentUser;
     }
 
     @Override

@@ -37,9 +37,7 @@ public class AuthInterceptor {
     @Around("@annotation(authCheck)")
     public Object doInterceptor(ProceedingJoinPoint point, AuthCheck authCheck) throws Throwable{
         String mustRole = authCheck.mustRole();
-        RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
-        HttpServletRequest request = ((ServletRequestAttributes)requestAttributes).getRequest();
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userService.getLoginUser();
         if(StringUtils.isNotBlank(mustRole)){
             UserRoleEnum userRoleEnum = UserRoleEnum.getEnumByValue(mustRole);
             if (userRoleEnum == null){

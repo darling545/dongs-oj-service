@@ -23,10 +23,9 @@ public interface UserService extends IService<User> {
      * 用户登录
      * @param userAccount 用户账户
      * @param userPassword 用户密码
-     * @param request request
      * @return 用户脱敏信息
      */
-    LoginUserVo userLogin(String userAccount, String userPassword, HttpServletRequest request);
+    LoginUserVo userLogin(String userAccount, String userPassword);
 
 
     /**
@@ -48,17 +47,15 @@ public interface UserService extends IService<User> {
 
     /**
      * 用户注销
-     * @param request 获取用户登录态
      * @return 是否成功
      */
-    Boolean userLogout(HttpServletRequest request);
+    Boolean userLogout();
 
     /**
      * 获取当前登录用户
-     * @param request
      * @return
      */
-    User getLoginUser(HttpServletRequest request);
+    User getLoginUser();
 
 
     QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
