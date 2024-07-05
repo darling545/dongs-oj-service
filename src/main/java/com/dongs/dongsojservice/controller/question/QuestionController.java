@@ -22,7 +22,7 @@ public class QuestionController {
 
     // begin 题目管理（增删改）
 
-    public BaseResponse<Long>
+
 
 
     // end 题目管理（增删改）
