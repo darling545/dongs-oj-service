@@ -61,3 +61,10 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: true
+# COS对象存储 本地配置文件
+cos:
+  client:
+    access-key: xxx
+    secret-key: xxx
+    region: xxx
+    bucket: xxx
