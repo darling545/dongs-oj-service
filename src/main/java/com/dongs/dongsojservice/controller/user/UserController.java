@@ -16,9 +16,8 @@ import com.dongs.dongsojservice.model.dto.userrequest.UserRegisterRequest;
 import com.dongs.dongsojservice.model.dto.userrequest.UserUpdateRequest;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.LoginUserVo;
-import com.dongs.dongsojservice.model.vo.UserVo;
+import com.dongs.dongsojservice.model.vo.user.UserVo;
 import com.dongs.dongsojservice.service.user.UserService;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,7 +25,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 import static com.dongs.dongsojservice.constant.UserConstant.ADMIN_ROLE;

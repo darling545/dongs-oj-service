@@ -7,9 +7,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.dongs.dongsojservice.model.dto.userrequest.UserQueryRequest;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.LoginUserVo;
-import com.dongs.dongsojservice.model.vo.UserVo;
+import com.dongs.dongsojservice.model.vo.user.UserVo;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

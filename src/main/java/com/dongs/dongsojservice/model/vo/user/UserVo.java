@@ -1,4 +1,4 @@
-package com.dongs.dongsojservice.model.vo;
+package com.dongs.dongsojservice.model.vo.user;
 
 import lombok.Data;
 

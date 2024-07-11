@@ -11,7 +11,7 @@ import com.dongs.dongsojservice.exception.BusinessException;
 import com.dongs.dongsojservice.model.dto.userrequest.UserQueryRequest;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.LoginUserVo;
-import com.dongs.dongsojservice.model.vo.UserVo;
+import com.dongs.dongsojservice.model.vo.user.UserVo;
 import com.dongs.dongsojservice.service.user.UserService;
 import com.dongs.dongsojservice.mapper.user.UserMapper;
 import com.dongs.dongsojservice.utils.SqlUtils;

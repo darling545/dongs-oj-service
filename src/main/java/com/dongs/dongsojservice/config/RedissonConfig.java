@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 创建redisClient，用来连接redis实例
  */
-@Deprecated
 @Configuration
 @Data
 @ConfigurationProperties(prefix = "spring.redis")
