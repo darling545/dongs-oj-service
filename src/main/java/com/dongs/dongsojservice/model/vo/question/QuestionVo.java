@@ -3,6 +3,7 @@ package com.dongs.dongsojservice.model.vo.question;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.dongs.dongsojservice.model.dto.questionrequest.CodeTemplate;
 import com.dongs.dongsojservice.model.dto.questionrequest.JudgeCase;
 import com.dongs.dongsojservice.model.dto.questionrequest.JudgeConfig;
 import com.dongs.dongsojservice.model.pojo.Question;
@@ -32,17 +33,17 @@ public class QuestionVo implements Serializable {
     /**
      * 标题
      */
-    private String title;
+    private String questionTitle;
 
     /**
      * 内容
      */
-    private String content;
+    private String questionContent;
 
     /**
      * 标签列表
      */
-    private List<String> tags;
+    private List<String> questionTags;
 
     /**
      * 题目提交数
@@ -53,6 +54,11 @@ public class QuestionVo implements Serializable {
      * 题目通过数
      */
     private Integer acceptedNum;
+    /**
+     * 题目等级(简单、中等、困难)
+     */
+    private String questionLevel;
+
 
     /**
      * 判题配置（json 对象）
@@ -97,7 +103,13 @@ public class QuestionVo implements Serializable {
     /**
      * 题目答案
      */
-    private String answer;
+    private String questionAnswer;
+
+
+    /**
+     * 代码模板
+     */
+    private CodeTemplate codeTemplate;
 
 
     /**
@@ -111,7 +123,7 @@ public class QuestionVo implements Serializable {
         }
         Question question = new Question();
         BeanUtils.copyProperties(questionVo,question);
-        List<String> tagList = questionVo.getTags();
+        List<String> tagList = questionVo.getQuestionTags();
         if (tagList != null){
             question.setQuestionTags(JSONUtil.toJsonStr(tagList));
         }
@@ -138,7 +150,7 @@ public class QuestionVo implements Serializable {
         String judgeConfig = question.getJudgeConfig();
         String judgeCase = question.getJudgeCase();
         if (StrUtil.isNotBlank(tags)){
-            questionVo.setTags(JSONUtil.toList(tags,String.class));
+            questionVo.setQuestionTags(JSONUtil.toList(tags,String.class));
         }
         if (StrUtil.isNotBlank(judgeConfig)){
             questionVo.setJudgeConfig(JSONUtil.toBean(judgeConfig,JudgeConfig.class));

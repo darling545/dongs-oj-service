@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dongs.dongsojservice.model.dto.questionrequest.QuestionQueryRequest;
 import com.dongs.dongsojservice.model.pojo.Question;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.question.QuestionVo;
 
 /**
@@ -29,4 +30,19 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<QuestionVo> getQuestionVoPage(Page<Question> questionPage);
+
+    /**
+     * 获取脱敏题目信息
+     * @param question 题目信息
+     * @param loginUser 当前登录用户
+     * @return 脱敏题目信息
+     */
+    QuestionVo getQuestionVO(Question question, User loginUser);
+
+    /**
+     * 校验
+     * @param question
+     * @param add
+     */
+    void validQuestion(Question question,boolean add);
 }

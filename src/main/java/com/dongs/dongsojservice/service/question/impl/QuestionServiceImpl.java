@@ -1,20 +1,29 @@
 package com.dongs.dongsojservice.service.question.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.dongs.dongsojservice.common.ErrorCode;
 import com.dongs.dongsojservice.constant.CommonConstant;
+import com.dongs.dongsojservice.constant.UserConstant;
+import com.dongs.dongsojservice.exception.BusinessException;
+import com.dongs.dongsojservice.exception.ThrowUtils;
+import com.dongs.dongsojservice.model.dto.questionrequest.CodeTemplate;
 import com.dongs.dongsojservice.model.dto.questionrequest.QuestionQueryRequest;
 import com.dongs.dongsojservice.model.pojo.Question;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.question.QuestionVo;
 import com.dongs.dongsojservice.mapper.question.QuestionMapper;
+import com.dongs.dongsojservice.model.vo.user.UserVo;
 import com.dongs.dongsojservice.service.question.QuestionService;
 import com.dongs.dongsojservice.service.user.UserService;
 import com.dongs.dongsojservice.utils.SqlUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -105,6 +114,65 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
         // 将封装好的信息填充到要返回的题目信息封装类中
         questionVoPage.setRecords(questionVoList);
         return questionVoPage;
+    }
+
+    @Override
+    public QuestionVo getQuestionVO(Question question, User loginUser) {
+        QuestionVo questionVo = QuestionVo.objToVo(question);
+        // 关联用户信息
+        Long userId = question.getUserId();
+        User user = null;
+        UserVo userVo = null;
+        if (userId > 0){
+            if (!userId.equals(loginUser.getId())){
+                user = userService.getById(userId);
+                userVo = userService.getUserVo(user);
+            }else {
+                userVo = userService.getUserVo(loginUser);
+            }
+        }
+        if (!userId.equals(loginUser.getId()) && !userService.isAdmin(loginUser)){
+            questionVo.setJudgeCase(null);
+        }
+        // 添加代码模板
+        String codeTemplateStr = ResourceUtil.readUtf8Str("CodeTemplate.json");
+        CodeTemplate codeTemplate = JSONUtil.toBean(codeTemplateStr,CodeTemplate.class);
+        questionVo.setCodeTemplate(codeTemplate);
+        questionVo.setUserVO(userVo);
+        return questionVo;
+    }
+
+    @Override
+    public void validQuestion(Question question, boolean add) {
+        if (question == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        String title = question.getQuestionTitle();
+        String content = question.getQuestionContent();
+        String tags = question.getQuestionTags();
+        String answer = question.getQuestionAnswer();
+        String judgeCase = question.getJudgeCase();
+        String judgeConfig = question.getJudgeConfig();
+        // 创建时，参数不能为空
+        if (add) {
+            ThrowUtils.throwIf(StringUtils.isAnyBlank(title, content, tags), ErrorCode.PARAMS_ERROR);
+        }
+        // 有参数则校验
+        if (StringUtils.isNotBlank(title) && title.length() > 80) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "标题过长");
+        }
+        if (StringUtils.isNotBlank(content) && content.length() > 8192) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "内容过长");
+        }
+        if (StringUtils.isNotBlank(answer) && answer.length() > 8192) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "答案过长");
+        }
+        if (StringUtils.isNotBlank(judgeCase) && judgeCase.length() > 8192) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "判题用例过长");
+        }
+        if (StringUtils.isNotBlank(judgeConfig) && judgeConfig.length() > 8192) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "判题配置过长");
+        }
     }
 }
 

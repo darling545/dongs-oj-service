@@ -1,27 +1,41 @@
 package com.dongs.dongsojservice.controller.question;
 
 import cn.hutool.core.lang.TypeReference;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dongs.dongsojservice.annotation.AuthCheck;
 import com.dongs.dongsojservice.common.BaseResponse;
+import com.dongs.dongsojservice.common.DeleteRequest;
 import com.dongs.dongsojservice.common.ErrorCode;
 import com.dongs.dongsojservice.common.ResultUtils;
+import com.dongs.dongsojservice.exception.BusinessException;
 import com.dongs.dongsojservice.exception.ThrowUtils;
+import com.dongs.dongsojservice.model.dto.questionrequest.JudgeCase;
+import com.dongs.dongsojservice.model.dto.questionrequest.JudgeConfig;
+import com.dongs.dongsojservice.model.dto.questionrequest.QuestionAddRequest;
 import com.dongs.dongsojservice.model.dto.questionrequest.QuestionQueryRequest;
 import com.dongs.dongsojservice.model.pojo.Question;
+import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.question.QuestionVo;
 import com.dongs.dongsojservice.service.question.QuestionService;
+import com.dongs.dongsojservice.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.dongs.dongsojservice.constant.RedisConstant.CACHE_NULL_TTL;
+import static com.dongs.dongsojservice.constant.RedisConstant.CACHE_QUESTION_TTL;
+import static com.dongs.dongsojservice.constant.RedisKeyConstant.CACHE_KEY_PREFIX;
+import static com.dongs.dongsojservice.constant.RedisKeyConstant.CACHE_QUESTION_KEY;
 import static com.dongs.dongsojservice.constant.UserConstant.ADMIN_ROLE;
 
 /**
@@ -34,9 +48,6 @@ import static com.dongs.dongsojservice.constant.UserConstant.ADMIN_ROLE;
 @Slf4j
 public class QuestionController {
 
-    // 缓存键的前缀，用于区分不同分页数据的缓存
-    private static final String CACHE_KEY_PREFIX = "dataPage:";
-
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -44,6 +55,9 @@ public class QuestionController {
 
     @Resource
     private QuestionService questionService;
+
+    @Resource
+    private UserService userService;
 
 
 
@@ -103,11 +117,105 @@ public class QuestionController {
     }
 
 
+    /**
+     * 删除题目根据id
+     *
+     * @param deleteRequest
+     * @return
+     */
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteQuestionById(@RequestBody DeleteRequest deleteRequest){
+        if (deleteRequest == null || deleteRequest.getId() <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误");
+        }
+        User user = userService.getLoginUser();
+
+        long questionId = deleteRequest.getId();
+        Question question = questionService.getById(questionId);
+        ThrowUtils.throwIf(question == null,ErrorCode.NOT_FOUND_ERROR);
+
+        if (!question.getUserId().equals(user.getId()) && userService.isAdmin()){
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        boolean del = questionService.removeById(questionId);
+        return ResultUtils.success(del);
+    }
+
+
+    /**
+     * 根据id获取题目信息（脱敏）
+     * @param id 题目id
+     * @return 返回题目脱敏信息
+     */
+    @GetMapping("/get/vo")
+    public BaseResponse<QuestionVo> getQuestionVoById(long id){
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser();
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"题目参数错误");
+        }
+        // 设置缓存键
+        String key = CACHE_QUESTION_KEY + id;
+        // 查询redis中是否有当前缓存
+        String questionJson = stringRedisTemplate.opsForValue().get(key);
+        if (StrUtil.isNotBlank(questionJson)){
+            // 缓存命中，直接返回
+            Question question = JSONUtil.toBean(questionJson,Question.class);
+            return ResultUtils.success(questionService.getQuestionVO(question,loginUser));
+        }
+        Question question = questionService.getById(id);
+        if (question == null){
+            stringRedisTemplate.opsForValue().set(key,"",CACHE_NULL_TTL + RandomUtil.randomLong(1,10),TimeUnit.MINUTES);
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }else {
+            // 存在就加入缓存
+            stringRedisTemplate.opsForValue().set(key,JSONUtil.toJsonStr(question),CACHE_QUESTION_TTL + RandomUtil.randomLong(1,3),TimeUnit.MINUTES);
+        }
+        return ResultUtils.success(questionService.getQuestionVO(question,loginUser));
+    }
 
     // end 题目管理（删改查）
 
     // begin 题目管理（新增）TODO 新增题目时测试用例自动生成但是修改的时候不会显示全部测试用例（只显示前5个），可以通过按钮进行调节是否修改
 
+    /**
+     * 创建题目
+     * @param questionAddRequest 新增题目请求类
+     * @return 新增题目后的id值
+     */
+    @PostMapping("/add")
+    public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest){
+        if (questionAddRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误");
+        }
+
+        Question question = new Question();
+        BeanUtils.copyProperties(questionAddRequest,question);
+        List<String> tags = questionAddRequest.getQuestionTags();
+        if (tags != null){
+            question.setQuestionTags(JSONUtil.toJsonStr(tags));
+        }
+        List<JudgeCase> judgeCases = questionAddRequest.getJudgeCase();
+        if (judgeCases != null){
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCases));
+        }
+        JudgeConfig judgeConfig = questionAddRequest.getJudgeConfig();
+        if (judgeConfig != null){
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
+        }
+        questionService.validQuestion(question,true);
+        User loginUser = userService.getLoginUser();
+        question.setUserId(loginUser.getId());
+        question.setFavourNum(0);
+        question.setThumbNum(0);
+        boolean result = questionService.save(question);
+        ThrowUtils.throwIf(!result,ErrorCode.OPERATION_ERROR);
+        long saveQuestionId = question.getId();
+        // 如果新增了题目，就重新刷新缓存，清楚CACHE_KEY_PREFIX为前缀的键
+        stringRedisTemplate.delete(CACHE_KEY_PREFIX);
+        return ResultUtils.success(saveQuestionId);
+    }
 
     // end 题目管理（新增）
 }

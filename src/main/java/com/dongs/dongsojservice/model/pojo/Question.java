@@ -49,7 +49,7 @@ public class Question implements Serializable {
      * 题目答案
      */
     @TableField(value = "qusetion_answer")
-    private String qusetionAnswer;
+    private String questionAnswer;
 
     /**
      * 提交数

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dongs.dongsojservice.common.ErrorCode;
 import com.dongs.dongsojservice.exception.BusinessException;
 import com.dongs.dongsojservice.model.dto.userrequest.UserQueryRequest;
+import com.dongs.dongsojservice.model.enums.UserRoleEnum;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.LoginUserVo;
 import com.dongs.dongsojservice.model.vo.user.UserVo;
@@ -202,6 +203,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 
+    /**
+     * 判断是否为管理员
+     * @return
+     */
+    @Override
+    public boolean isAdmin() {
+        // 仅管理员可查
+        Object userObj = StpUtil.getSession().get(USER_LOGIN_STATE);
+        User user = (User) userObj;
+        return isAdmin(user);
+    }
+
+
+    @Override
+    public boolean isAdmin(User user) {
+        return user != null && UserRoleEnum.ROLE_ADMIN.getValue().equals(user.getUserRole());
+    }
 }
 
 

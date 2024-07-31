@@ -10,7 +10,7 @@
             <result property="questionContent" column="question_content" jdbcType="VARCHAR"/>
             <result property="userId" column="user_id" jdbcType="BIGINT"/>
             <result property="questionTags" column="question_tags" jdbcType="VARCHAR"/>
-            <result property="qusetionAnswer" column="qusetion_answer" jdbcType="VARCHAR"/>
+            <result property="questionAnswer" column="qusetion_answer" jdbcType="VARCHAR"/>
             <result property="submitNum" column="submit_num" jdbcType="INTEGER"/>
             <result property="acceptedNum" column="accepted_num" jdbcType="INTEGER"/>
             <result property="judgeCase" column="judge_case" jdbcType="VARCHAR"/>
