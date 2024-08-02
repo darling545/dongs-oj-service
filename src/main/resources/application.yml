@@ -68,3 +68,5 @@ cos:
     secret-key: xxx
     region: xxx
     bucket: xxx
+codeSandBox:
+  type: remote

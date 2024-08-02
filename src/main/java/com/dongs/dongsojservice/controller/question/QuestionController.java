@@ -3,7 +3,6 @@ package com.dongs.dongsojservice.controller.question;
 import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dongs.dongsojservice.annotation.AuthCheck;
@@ -17,6 +16,7 @@ import com.dongs.dongsojservice.model.dto.questionrequest.JudgeCase;
 import com.dongs.dongsojservice.model.dto.questionrequest.JudgeConfig;
 import com.dongs.dongsojservice.model.dto.questionrequest.QuestionAddRequest;
 import com.dongs.dongsojservice.model.dto.questionrequest.QuestionQueryRequest;
+import com.dongs.dongsojservice.model.enums.QuestionSubmitLanguageEnum;
 import com.dongs.dongsojservice.model.pojo.Question;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.question.QuestionVo;
@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -218,4 +219,21 @@ public class QuestionController {
     }
 
     // end 题目管理（新增）
+
+
+    // begin 题目语言
+
+    /**
+     * 返回对应的语言的枚举值给前端
+     * @return 对应的语言枚举值
+     */
+    @GetMapping("/languages")
+    public BaseResponse<List<String>> getAllLanguages(){
+        List<String> statusMap = new ArrayList<>();
+        for (QuestionSubmitLanguageEnum questionSubmitLanguageEnum : QuestionSubmitLanguageEnum.values()){
+            statusMap.add(questionSubmitLanguageEnum.getValue());
+        }
+        return ResultUtils.success(statusMap);
+    }
+    // end 题目语言
 }
