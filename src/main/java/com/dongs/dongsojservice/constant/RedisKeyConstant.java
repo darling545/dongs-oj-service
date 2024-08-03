@@ -8,4 +8,7 @@ public interface RedisKeyConstant {
 
 
     String CACHE_QUESTION_KEY = "question:";
+
+
+    String REDIS_LIMIT_KEY_PREFIX = "commit:limit";
 }

@@ -12,15 +12,14 @@ import com.dongs.dongsojservice.common.ErrorCode;
 import com.dongs.dongsojservice.common.ResultUtils;
 import com.dongs.dongsojservice.exception.BusinessException;
 import com.dongs.dongsojservice.exception.ThrowUtils;
-import com.dongs.dongsojservice.model.dto.questionrequest.JudgeCase;
-import com.dongs.dongsojservice.model.dto.questionrequest.JudgeConfig;
-import com.dongs.dongsojservice.model.dto.questionrequest.QuestionAddRequest;
-import com.dongs.dongsojservice.model.dto.questionrequest.QuestionQueryRequest;
+import com.dongs.dongsojservice.manager.RedisLimiterManager;
+import com.dongs.dongsojservice.model.dto.questionrequest.*;
 import com.dongs.dongsojservice.model.enums.QuestionSubmitLanguageEnum;
 import com.dongs.dongsojservice.model.pojo.Question;
 import com.dongs.dongsojservice.model.pojo.User;
 import com.dongs.dongsojservice.model.vo.question.QuestionVo;
 import com.dongs.dongsojservice.service.question.QuestionService;
+import com.dongs.dongsojservice.service.question.QuestionSubmitService;
 import com.dongs.dongsojservice.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -35,8 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.dongs.dongsojservice.constant.RedisConstant.CACHE_NULL_TTL;
 import static com.dongs.dongsojservice.constant.RedisConstant.CACHE_QUESTION_TTL;
-import static com.dongs.dongsojservice.constant.RedisKeyConstant.CACHE_KEY_PREFIX;
-import static com.dongs.dongsojservice.constant.RedisKeyConstant.CACHE_QUESTION_KEY;
+import static com.dongs.dongsojservice.constant.RedisKeyConstant.*;
 import static com.dongs.dongsojservice.constant.UserConstant.ADMIN_ROLE;
 
 /**
@@ -59,6 +57,12 @@ public class QuestionController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private RedisLimiterManager redisLimiterManager;
+
+    @Resource
+    private QuestionSubmitService questionSubmitService;
 
 
 
@@ -236,4 +240,32 @@ public class QuestionController {
         return ResultUtils.success(statusMap);
     }
     // end 题目语言
+
+    // begin 提交题目
+
+    /**
+     * 提交题目
+     * @param questionSubmitAddRequest
+     * @return
+     */
+    @PostMapping("/question_submit/do")
+    public BaseResponse<Long> doQuestionSubmit(@RequestBody QuestionSubmitAddRequest questionSubmitAddRequest){
+        if (questionSubmitAddRequest == null || questionSubmitAddRequest.getQuestionId() <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 只有已登录用户才可以提交
+        final User user = userService.getLoginUser();
+        // 设置限流
+        boolean rateLimit = redisLimiterManager.doRateLimit(REDIS_LIMIT_KEY_PREFIX + user.getId().toString());
+        if (!rateLimit){
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"提交过于频繁");
+        }else {
+            log.info("提交成功,题号：{},用户：{}", questionSubmitAddRequest.getQuestionId(), user.getId());
+            Long result = questionSubmitService.doSubmit(questionSubmitAddRequest,user);
+            stringRedisTemplate.delete(CACHE_KEY_PREFIX);
+            return ResultUtils.success(result);
+        }
+
+    }
+    // end 提交题目
 }
